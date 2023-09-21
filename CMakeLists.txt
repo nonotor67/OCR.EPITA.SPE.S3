@@ -5,4 +5,5 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_subdirectory(libs)
+add_subdirectory(tools)
 add_subdirectory(ocr_sudoku_solver)
