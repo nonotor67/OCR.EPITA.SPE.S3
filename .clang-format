@@ -53,9 +53,9 @@ IncludeCategories:
     Priority: 2
   - Regex: '^"'
     Priority: 1
-  - Regex: '.h>$'
+  - Regex: '^<(SDL($|_)|gtk/)'
     Priority: 3
-  - Regex: '>$'
+  - Regex: '.h>$'
     Priority: 4
 IncludeIsMainRegex: '$'
 IncludeIsMainSourceRegex: ''
