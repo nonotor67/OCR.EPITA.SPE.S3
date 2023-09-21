@@ -1,0 +1,3 @@
+add_subdirectory(image_processing)
+add_subdirectory(neural_network)
+add_subdirectory(sudoku_solver)
