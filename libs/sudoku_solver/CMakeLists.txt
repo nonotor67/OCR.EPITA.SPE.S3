@@ -8,4 +8,5 @@ target_sources(
     include/sudoku_solver.h
 )
 
+add_subdirectory(test)
 add_subdirectory(tools)

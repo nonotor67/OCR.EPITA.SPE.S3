@@ -7,3 +7,5 @@ target_sources(
     FILES
     include/neural_network.h
 )
+
+add_subdirectory(test)
