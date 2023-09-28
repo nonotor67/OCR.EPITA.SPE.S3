@@ -53,7 +53,7 @@ IncludeCategories:
     Priority: 2
   - Regex: '^"'
     Priority: 1
-  - Regex: '^<(SDL($|_)|gtk/)'
+  - Regex: '^<(SDL(.h>$|_)|criterion|gtk/)'
     Priority: 3
   - Regex: '.h>$'
     Priority: 4
