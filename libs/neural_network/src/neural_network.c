@@ -1,4 +1,4 @@
-#include "neural_network/neural_network.h"
+#include "neural_network.h"
 
 #include <stdio.h>
 

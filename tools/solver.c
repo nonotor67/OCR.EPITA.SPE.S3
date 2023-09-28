@@ -1,4 +1,4 @@
-#include "sudoku_solver/sudoku_solver.h"
+#include "sudoku_solver.h"
 
 #include <stdlib.h>
 

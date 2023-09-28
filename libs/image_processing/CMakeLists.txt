@@ -5,7 +5,7 @@ target_sources(
     FILE_SET HEADERS
     BASE_DIRS include
     FILES
-    include/image_processing/image_processing.h
+    include/image_processing.h
 )
 
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)

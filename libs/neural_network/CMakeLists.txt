@@ -5,5 +5,5 @@ target_sources(
     FILE_SET HEADERS
     BASE_DIRS include
     FILES
-    include/neural_network/neural_network.h
+    include/neural_network.h
 )

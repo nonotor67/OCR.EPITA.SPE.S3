@@ -5,5 +5,5 @@ target_sources(
     FILE_SET HEADERS
     BASE_DIRS include
     FILES
-    include/sudoku_solver/sudoku_solver.h
+    include/sudoku_solver.h
 )

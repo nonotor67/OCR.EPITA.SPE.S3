@@ -1,6 +1,6 @@
-#include "image_processing/image_processing.h"
-#include "neural_network/neural_network.h"
-#include "sudoku_solver/sudoku_solver.h"
+#include "image_processing.h"
+#include "neural_network.h"
+#include "sudoku_solver.h"
 
 #include <stdlib.h>
 
