@@ -9,5 +9,6 @@ all:
 	cmake -S . -B $(BUILDDIR) -G Ninja -DCMAKE_BUILD_TYPE=Release
 	cmake --build $(BUILDDIR)
 
+.PHONY: clean
 clean:
 	rm -rf $(BUILDDIR)
