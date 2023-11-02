@@ -5,11 +5,19 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # C compiler warnings.
-add_compile_options("$<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wall;-Wextra;-Wpedantic>")
+add_compile_options(
+    "$<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-Wall;-Wextra;-Wpedantic>"
+)
+
 # Sanitizers.
-set(SANITIZER_OPTIONS $<$<CONFIG:Debug>:-fsanitize=address,undefined>)
-add_compile_options(${SANITIZER_OPTIONS})
-add_link_options(${SANITIZER_OPTIONS})
+if (CMAKE_BUILD_TYPE STREQUAL Debug)
+    set(
+        SANITIZER_OPTIONS
+        $<$<COMPILE_LANG_AND_ID:C,Clang,GNU>:-fsanitize=address,undefined>
+    )
+    add_compile_options(${SANITIZER_OPTIONS})
+    add_link_options(${SANITIZER_OPTIONS})
+endif ()
 
 enable_testing()
 
