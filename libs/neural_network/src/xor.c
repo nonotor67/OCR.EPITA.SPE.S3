@@ -1,6 +1,6 @@
 #include "neural_network.h"
 
-#include <stddef.h>
+#include <stdio.h>
 
 #define NN_TRAIN_SIZE 4
 #define NN_EPOCHS (1000 * 1000)
@@ -21,6 +21,20 @@ const nn_sample nn_nxor_samples[] = {
 };
 
 const nn_sample *train_xor = nn_nxor_samples;
+
+struct nn_model_xor nn_rand_xor(void) {
+    return (struct nn_model_xor){
+        .or_w1 = nn_rand_float(),
+        .or_w2 = nn_rand_float(),
+        .or_b = nn_rand_float(),
+        .nand_w1 = nn_rand_float(),
+        .nand_w2 = nn_rand_float(),
+        .nand_b = nn_rand_float(),
+        .and_w1 = nn_rand_float(),
+        .and_w2 = nn_rand_float(),
+        .and_b = nn_rand_float(),
+    };
+}
 
 float nn_forward_xor(const struct nn_model_xor *m, float x1, float x2) {
     float or = nn_sigmoid_f(m->or_w1 * x1 + m->or_w2 * x2 + m->or_b);
@@ -90,4 +104,16 @@ void nn_learn_xor(struct nn_model_xor *m, float learning_rate) {
         m->and_w2 -= learning_rate * d_and_w2;
         m->and_b -= learning_rate * d_and_b;
     }
+}
+
+void nn_print_xor(const struct nn_model_xor *m) {
+    printf("or_w1: %f\n", m->or_w1);
+    printf("or_w2: %f\n", m->or_w2);
+    printf("or_b: %f\n", m->or_b);
+    printf("nand_w1: %f\n", m->nand_w1);
+    printf("nand_w2: %f\n", m->nand_w2);
+    printf("nand_b: %f\n", m->nand_b);
+    printf("and_w1: %f\n", m->and_w1);
+    printf("and_w2: %f\n", m->and_w2);
+    printf("and_b: %f\n", m->and_b);
 }
