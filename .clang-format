@@ -53,7 +53,7 @@ IncludeCategories:
     Priority: 2
   - Regex: '^"'
     Priority: 1
-  - Regex: '^<(SDL(.h>$|_)|criterion|gtk/)'
+  - Regex: '^<(MagickWand|criterion|gtk/)'
     Priority: 3
   - Regex: '.h>$'
     Priority: 4

@@ -8,10 +8,7 @@ target_sources(
     include/image_processing.h
 )
 
-find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
-target_link_libraries(image_processing PRIVATE SDL2::SDL2)
-
-find_package(SDL2_image REQUIRED)
-target_link_libraries(image_processing PRIVATE SDL2_image::SDL2_image)
+pkg_check_modules(MAGICKWAND REQUIRED IMPORTED_TARGET MagickWand)
+target_link_libraries(image_processing PUBLIC PkgConfig::MAGICKWAND)
 
 add_subdirectory(test)
