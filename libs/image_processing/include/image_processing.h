@@ -5,6 +5,10 @@
 
 void ip_say_hello(void);
 
-bool ip_process_image(const char *image_path, const char *cell_path_fmt);
+bool ip_process_image(
+    const char *image_path,
+    const char *cell_path_fmt,
+    double rotate_degrees
+);
 
 #endif // OCR_SUDOKU_SOLVER_IMAGE_PROCESSING_H

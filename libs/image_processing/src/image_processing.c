@@ -233,11 +233,33 @@ static bool ip_find_grid(
     return true;
 }
 
-bool ip_process_image(const char *image_path, const char *cell_path_fmt) {
+bool ip_process_image(
+    const char *image_path,
+    const char *cell_path_fmt,
+    double rotate_degrees
+) {
     MagickWand *wand = NewMagickWand();
 
-    if (MagickReadImage(wand, image_path) == MagickFalse ||
-        MagickCannyEdgeImage(wand, 7.0, 3.0, 0.3, 0.4) == MagickFalse) {
+    if (MagickReadImage(wand, image_path) == MagickFalse) {
+        DestroyMagickWand(wand);
+        return false;
+    }
+
+    if (fabs(rotate_degrees) >= DBL_EPSILON) {
+        PixelWand *pixel_wand = NewPixelWand();
+        PixelSetColor(pixel_wand, "white");
+
+        if (MagickRotateImage(wand, pixel_wand, rotate_degrees) ==
+            MagickFalse) {
+            DestroyPixelWand(pixel_wand);
+            DestroyMagickWand(wand);
+            return false;
+        }
+
+        DestroyPixelWand(pixel_wand);
+    }
+
+    if (MagickCannyEdgeImage(wand, 7.0, 3.0, 0.3, 0.4) == MagickFalse) {
         DestroyMagickWand(wand);
         return false;
     }
