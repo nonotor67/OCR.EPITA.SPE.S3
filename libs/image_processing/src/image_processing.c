@@ -330,6 +330,20 @@ bool ip_process_image(
         return false;
     }
 
+    if (fabs(rotate_degrees) >= DBL_EPSILON) {
+        PixelWand *pixel_wand = NewPixelWand();
+        PixelSetColor(pixel_wand, "white");
+
+        if (MagickRotateImage(wand, pixel_wand, rotate_degrees) ==
+            MagickFalse) {
+            DestroyPixelWand(pixel_wand);
+            DestroyMagickWand(wand);
+            return false;
+        }
+
+        DestroyPixelWand(pixel_wand);
+    }
+
     bool result = MagickDistortImage(
         wand,
         PerspectiveDistortion,
