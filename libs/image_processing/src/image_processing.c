@@ -51,10 +51,6 @@ static void ip_point_list_fini(struct ip_point_list *list) {
     free(list->data);
 }
 
-void ip_say_hello(void) {
-    puts("Hello from image_processing");
-}
-
 static bool
 ip_point_list_push(struct ip_point_list *list, struct ip_point element) {
     if (list->len == list->cap) {

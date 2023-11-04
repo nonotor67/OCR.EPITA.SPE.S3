@@ -3,11 +3,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-// TODO: Remove hello.
-void ss_say_hello(void) {
-    puts("Hello from sudoku_solver");
-}
-
 bool ss_is_valid(const ss_grid grid) {
     // check if there is no duplicate in the row
     for (int line = 0; line < SS_WIDTH; line++) {

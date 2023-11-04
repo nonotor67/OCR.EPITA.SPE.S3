@@ -3,8 +3,6 @@
 
 #include <stdbool.h>
 
-void ip_say_hello(void);
-
 bool ip_process_image(
     const char *image_path,
     const char *cell_path_fmt,

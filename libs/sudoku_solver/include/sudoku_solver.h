@@ -8,8 +8,6 @@
 
 typedef int ss_grid[SS_GRID_SIZE];
 
-// TODO: Remove hello.
-void ss_say_hello(void);
 bool ss_is_valid(const ss_grid grid);
 bool ss_solve_sudoku(ss_grid grid);
 

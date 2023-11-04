@@ -5,8 +5,6 @@
 #include <stdio.h>
 
 Test(neural_network, example) {
-    nn_say_hello();
-
     printf("########## Simple Gates ##########\n");
 
     float w1 = nn_rand_float();

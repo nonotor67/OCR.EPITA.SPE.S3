@@ -4,10 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void nn_say_hello(void) {
-    printf("Hello, I'm a neural network.\n");
-}
-
 float nn_sigmoid_f(float x) {
     return 1.0f / (1.0f + expf(-x));
 }

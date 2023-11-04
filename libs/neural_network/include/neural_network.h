@@ -17,8 +17,6 @@ struct nn_model_xor {
     float and_b;
 };
 
-void nn_say_hello(void);
-
 float nn_sigmoid_f(float x);
 float nn_rand_float(void);
 struct nn_model_xor nn_rand_xor(void);
