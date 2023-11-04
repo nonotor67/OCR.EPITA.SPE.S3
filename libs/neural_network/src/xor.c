@@ -20,7 +20,7 @@ const nn_sample nn_nxor_samples[] = {
     { 1, 1, 1 },
 };
 
-const nn_sample *train_xor = nn_nxor_samples;
+const nn_sample *train_xor = nn_xor_samples;
 
 struct nn_model_xor nn_rand_xor(void) {
     return (struct nn_model_xor){
