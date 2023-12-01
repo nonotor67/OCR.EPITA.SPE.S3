@@ -1,12 +1,7 @@
 #include "neural_network.h"
 
-#include <math.h>
-#include <stdlib.h>
+#include <stdio.h>
 
-float nn_sigmoid_f(float x) {
-    return 1.0f / (1.0f + expf(-x));
-}
-
-float nn_rand_float(void) {
-    return (float) rand() / (float) RAND_MAX;
+void nn_say_hello(void) {
+    puts("Hello from neural_network");
 }
