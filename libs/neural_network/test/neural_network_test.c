@@ -1,5 +1,9 @@
+#include "neural_network.h"
+
 #include <criterion/criterion.h>
 
 Test(neural_network, example) {
-    cr_assert(true);
+    struct nn_dataset dataset;
+    cr_assert(nn_dataset_load(&dataset, "train.bin"));
+    nn_dataset_fini(&dataset);
 }
