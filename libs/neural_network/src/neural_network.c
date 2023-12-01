@@ -6,6 +6,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define NN_IMAGE_WIDTH 28
+#define NN_IMAGE_SIZE (NN_IMAGE_WIDTH * NN_IMAGE_WIDTH)
+
+#define NN_HIDDEN_LAYER_SIZE 10
+#define NN_OUTPUT_LAYER_SIZE 10
+
 #define NN_LOG(fmt, ...)        \
     fprintf(                    \
         stderr,                 \
@@ -86,4 +92,56 @@ bool nn_dataset_load(struct nn_dataset *dataset, const char *filepath) {
 void nn_dataset_fini(struct nn_dataset *dataset) {
     free(dataset->labels);
     free(dataset->pixels);
+}
+
+static void nn_rand_float_array(float *dst, size_t count, float displacement) {
+    for (size_t i = 0; i < count; i++) {
+        dst[i] = (float) rand() / (float) RAND_MAX + displacement;
+    }
+}
+
+static bool nn_model_init_rand(struct nn_model *model) {
+    model->w1 = malloc(NN_HIDDEN_LAYER_SIZE * NN_IMAGE_SIZE * sizeof(float));
+
+    if (!model->w1) {
+        return false;
+    }
+
+    nn_rand_float_array(model->w1, NN_HIDDEN_LAYER_SIZE * NN_IMAGE_SIZE, -0.5f);
+
+    model->b1 = malloc(NN_HIDDEN_LAYER_SIZE * sizeof(float));
+
+    if (!model->b1) {
+        free(model->w1);
+        return false;
+    }
+
+    nn_rand_float_array(model->w1, NN_HIDDEN_LAYER_SIZE, -0.5f);
+
+    model->w2 =
+        malloc(NN_OUTPUT_LAYER_SIZE * NN_HIDDEN_LAYER_SIZE * sizeof(float));
+
+    if (!model->w2) {
+        free(model->b1);
+        free(model->w1);
+        return false;
+    }
+
+    nn_rand_float_array(
+        model->w1,
+        NN_OUTPUT_LAYER_SIZE * NN_HIDDEN_LAYER_SIZE,
+        -0.5f
+    );
+
+    model->b2 = malloc(NN_OUTPUT_LAYER_SIZE * sizeof(float));
+
+    if (!model->b2) {
+        free(model->w2);
+        free(model->b1);
+        free(model->w1);
+        return false;
+    }
+
+    nn_rand_float_array(model->b2, NN_OUTPUT_LAYER_SIZE, -0.5f);
+    return true;
 }
