@@ -6,11 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NN_IMAGE_WIDTH 28
-#define NN_IMAGE_SIZE (NN_IMAGE_WIDTH * NN_IMAGE_WIDTH)
-
-#define NN_HIDDEN_LAYER_SIZE 10
-#define NN_OUTPUT_LAYER_SIZE 10
+// Layer sizes in number of neurons.
+#define NN_INPUT_SIZE (28 * 28)
+#define NN_HIDDEN_SIZE 10
+#define NN_OUTPUT_SIZE 10
 
 #define NN_LOG(fmt, ...)        \
     fprintf(                    \
@@ -23,16 +22,42 @@
     )
 #define NN_LOGE(fmt, ...) NN_LOG(fmt ": %s", ##__VA_ARGS__, strerror(errno))
 
-static bool nn_read_floats(float *dst, size_t count, FILE *file) {
+static bool nn_array_init(struct nn_array *array, size_t size) {
+    array->size = size;
+    return (array->data = malloc(size * sizeof(float)));
+}
+
+static void nn_array_fini(struct nn_array *array) {
+    free(array->data);
+}
+
+static bool nn_matrix_init(struct nn_matrix *matrix, size_t rows, size_t cols) {
+    matrix->rows = rows;
+    matrix->cols = cols;
+    return (matrix->data = malloc(rows * cols * sizeof(float)));
+}
+
+static void nn_matrix_fini(struct nn_matrix *matrix) {
+    free(matrix->data);
+}
+
+static struct nn_array nn_as_array(struct nn_matrix matrix) {
+    return (struct nn_array){
+        .size = matrix.rows * matrix.cols,
+        .data = matrix.data,
+    };
+}
+
+static bool nn_read_file(struct nn_array dst, FILE *file) {
     size_t pos = 0;
 
-    while (pos < count) {
+    while (pos < dst.size) {
         if (feof(file) || ferror(file)) {
             NN_LOGE("unexpected EOF or read error");
             return false;
         }
 
-        pos += fread(&dst[pos], sizeof(float), count - pos, file);
+        pos += fread(&dst.data[pos], sizeof(float), dst.size - pos, file);
     }
 
     return true;
@@ -46,41 +71,38 @@ bool nn_dataset_load(struct nn_dataset *dataset, const char *filepath) {
         return false;
     }
 
-    if (fread(&dataset->size, sizeof(size_t), 1, file) < 1) {
+    size_t dataset_size;
+
+    if (fread(&dataset_size, sizeof(dataset_size), 1, file) < 1) {
         NN_LOGE("failed to read size");
         fclose(file);
         return false;
     }
 
-    dataset->labels = malloc(dataset->size * sizeof(float));
-
-    if (!dataset->labels) {
+    if (!nn_array_init(&dataset->labels, dataset_size)) {
         NN_LOGE("failed to allocate labels");
         fclose(file);
         return false;
     }
 
-    if (!nn_read_floats(dataset->labels, dataset->size, file)) {
+    if (!nn_read_file(dataset->labels, file)) {
         NN_LOGE("failed to read labels");
-        free(dataset->labels);
+        nn_array_fini(&dataset->labels);
         fclose(file);
         return false;
     }
 
-    size_t num_pixels = NN_IMAGE_SIZE * dataset->size;
-    dataset->pixels = malloc(num_pixels * sizeof(float));
-
-    if (!dataset->pixels) {
+    if (!nn_matrix_init(&dataset->pixels, NN_INPUT_SIZE, dataset_size)) {
         NN_LOGE("failed to allocate pixels");
-        free(dataset->labels);
+        nn_array_fini(&dataset->labels);
         fclose(file);
         return false;
     }
 
-    if (!nn_read_floats(dataset->pixels, num_pixels, file)) {
+    if (!nn_read_file(nn_as_array(dataset->pixels), file)) {
         NN_LOGE("failed to read pixels");
-        free(dataset->pixels);
-        free(dataset->labels);
+        nn_matrix_fini(&dataset->pixels);
+        nn_array_fini(&dataset->labels);
         fclose(file);
         return false;
     }
@@ -90,58 +112,45 @@ bool nn_dataset_load(struct nn_dataset *dataset, const char *filepath) {
 }
 
 void nn_dataset_fini(struct nn_dataset *dataset) {
-    free(dataset->labels);
-    free(dataset->pixels);
+    nn_array_fini(&dataset->labels);
+    nn_matrix_fini(&dataset->pixels);
 }
 
-static void nn_rand_float_array(float *dst, size_t count, float displacement) {
-    for (size_t i = 0; i < count; i++) {
-        dst[i] = (float) rand() / (float) RAND_MAX + displacement;
+static void nn_rand(struct nn_array dst, float displacement) {
+    for (size_t i = 0; i < dst.size; i++) {
+        dst.data[i] = (float) rand() / (float) RAND_MAX + displacement;
     }
 }
 
 static bool nn_model_init_rand(struct nn_model *model) {
-    model->w1 = malloc(NN_HIDDEN_LAYER_SIZE * NN_IMAGE_SIZE * sizeof(float));
-
-    if (!model->w1) {
+    if (!nn_matrix_init(&model->w1, NN_HIDDEN_SIZE, NN_INPUT_SIZE)) {
         return false;
     }
 
-    nn_rand_float_array(model->w1, NN_HIDDEN_LAYER_SIZE * NN_IMAGE_SIZE, -0.5f);
+    nn_rand(nn_as_array(model->w1), -0.5f);
 
-    model->b1 = malloc(NN_HIDDEN_LAYER_SIZE * sizeof(float));
-
-    if (!model->b1) {
-        free(model->w1);
+    if (!nn_array_init(&model->b1, NN_HIDDEN_SIZE)) {
+        nn_matrix_fini(&model->w1);
         return false;
     }
 
-    nn_rand_float_array(model->w1, NN_HIDDEN_LAYER_SIZE, -0.5f);
+    nn_rand(model->b1, -0.5f);
 
-    model->w2 =
-        malloc(NN_OUTPUT_LAYER_SIZE * NN_HIDDEN_LAYER_SIZE * sizeof(float));
-
-    if (!model->w2) {
-        free(model->b1);
-        free(model->w1);
+    if (!nn_matrix_init(&model->w2, NN_OUTPUT_SIZE, NN_HIDDEN_SIZE)) {
+        nn_array_fini(&model->b1);
+        nn_matrix_fini(&model->w1);
         return false;
     }
 
-    nn_rand_float_array(
-        model->w1,
-        NN_OUTPUT_LAYER_SIZE * NN_HIDDEN_LAYER_SIZE,
-        -0.5f
-    );
+    nn_rand(nn_as_array(model->w2), -0.5f);
 
-    model->b2 = malloc(NN_OUTPUT_LAYER_SIZE * sizeof(float));
-
-    if (!model->b2) {
-        free(model->w2);
-        free(model->b1);
-        free(model->w1);
+    if (!nn_array_init(&model->b2, NN_OUTPUT_SIZE)) {
+        nn_matrix_fini(&model->w2);
+        nn_array_fini(&model->b1);
+        nn_matrix_fini(&model->w1);
         return false;
     }
 
-    nn_rand_float_array(model->b2, NN_OUTPUT_LAYER_SIZE, -0.5f);
+    nn_rand(model->b2, -0.5f);
     return true;
 }

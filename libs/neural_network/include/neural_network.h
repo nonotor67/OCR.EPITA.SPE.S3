@@ -4,10 +4,20 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-struct nn_dataset {
+struct nn_array {
     size_t size;
-    float *labels;
-    float *pixels;
+    float *data;
+};
+
+struct nn_matrix {
+    size_t rows;
+    size_t cols;
+    float *data;
+};
+
+struct nn_dataset {
+    struct nn_array labels;
+    struct nn_matrix pixels;
 };
 
 bool nn_dataset_load(struct nn_dataset *dataset, const char *filepath);
@@ -15,10 +25,10 @@ bool nn_dataset_load(struct nn_dataset *dataset, const char *filepath);
 void nn_dataset_fini(struct nn_dataset *dataset);
 
 struct nn_model {
-    float *w1;
-    float *b1;
-    float *w2;
-    float *b2;
+    struct nn_matrix w1;
+    struct nn_array b1;
+    struct nn_matrix w2;
+    struct nn_array b2;
 };
 
 #endif // OCR_SUDOKU_SOLVER_NEURAL_NETWORK_H
