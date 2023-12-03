@@ -8,4 +8,6 @@ target_sources(
     include/neural_network.h
 )
 
+target_link_libraries(neural_network PUBLIC m)
+
 add_subdirectory(test)
