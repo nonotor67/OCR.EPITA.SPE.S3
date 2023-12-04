@@ -234,7 +234,14 @@ static bool nn_backward_prop_context_init(
         return false;
     }
 
+    if (!nn_array_init(&ctx->db2, model->b2.size)) {
+        nn_matrix_fini(&ctx->dw2);
+        nn_matrix_fini(&ctx->a1_t);
+        nn_matrix_fini(&ctx->dz2);
+    }
+
     if (!nn_matrix_init(&ctx->w2_t, model->w2.cols, model->w2.rows)) {
+        nn_array_fini(&ctx->db2);
         nn_matrix_fini(&ctx->dw2);
         nn_matrix_fini(&ctx->a1_t);
         nn_matrix_fini(&ctx->dz2);
@@ -242,6 +249,7 @@ static bool nn_backward_prop_context_init(
 
     if (!nn_matrix_init(&ctx->dz1, ctx->w2_t.rows, ctx->dz2.cols)) {
         nn_matrix_fini(&ctx->w2_t);
+        nn_array_fini(&ctx->db2);
         nn_matrix_fini(&ctx->dw2);
         nn_matrix_fini(&ctx->a1_t);
         nn_matrix_fini(&ctx->dz2);
@@ -252,6 +260,7 @@ static bool nn_backward_prop_context_init(
 
     if (!nn_matrix_init(&ctx->x_t, pixels.cols, pixels.rows)) {
         nn_matrix_fini(&ctx->dz1);
+        nn_array_fini(&ctx->db2);
         nn_matrix_fini(&ctx->dw2);
         nn_matrix_fini(&ctx->a1_t);
         nn_matrix_fini(&ctx->dz2);
@@ -260,10 +269,21 @@ static bool nn_backward_prop_context_init(
     if (!nn_matrix_init(&ctx->dw1, ctx->dz1.rows, pixels.rows)) {
         nn_matrix_fini(&ctx->x_t);
         nn_matrix_fini(&ctx->dz1);
+        nn_array_fini(&ctx->db2);
         nn_matrix_fini(&ctx->dw2);
         nn_matrix_fini(&ctx->a1_t);
         nn_matrix_fini(&ctx->dz2);
         return false;
+    }
+
+    if (!nn_array_init(&ctx->db1, model->b1.size)) {
+        nn_matrix_fini(&ctx->dw1);
+        nn_matrix_fini(&ctx->x_t);
+        nn_matrix_fini(&ctx->dz1);
+        nn_array_fini(&ctx->db2);
+        nn_matrix_fini(&ctx->dw2);
+        nn_matrix_fini(&ctx->a1_t);
+        nn_matrix_fini(&ctx->dz2);
     }
 
     return true;
@@ -390,7 +410,7 @@ static void nn_one_hot_transposed(struct nn_matrix dst, struct nn_array src) {
 
 static void nn_sub(struct nn_array dst, struct nn_array a, struct nn_array b) {
     for (size_t i = 0; i < a.size; i++) {
-        dst.data[i] = b.data[i] - a.data[i];
+        dst.data[i] = a.data[i] - b.data[i];
     }
 }
 
@@ -408,14 +428,14 @@ static void nn_mul_scalar(struct nn_array a, float b) {
     }
 }
 
-static float nn_sum(struct nn_array array) {
-    float sum = 0.0f;
+static void nn_sum_rows(struct nn_array dst, struct nn_matrix src) {
+    memset(dst.data, 0, dst.size * sizeof(float));
 
-    for (size_t i = 0; i < array.size; i++) {
-        sum += array.data[i];
+    for (size_t y = 0; y < src.rows; y++) {
+        for (size_t x = 0; x < src.cols; x++) {
+            dst.data[y] += NN_AT(src, x, y);
+        }
     }
-
-    return sum;
 }
 
 static void nn_relu_deriv(struct nn_array dst, struct nn_array src) {
@@ -437,6 +457,7 @@ static void nn_backward_prop(
     const struct nn_dataset *dataset
 ) {
     // 1 / m
+    float m = (float) dataset->pixels.cols;
     float rcp_m = 1.0f / (float) dataset->pixels.cols;
 
     // one_hot_Y = one_hot(Y)
@@ -452,7 +473,8 @@ static void nn_backward_prop(
     nn_dot(ctx->bwd.dw2, ctx->bwd.dz2, ctx->bwd.a1_t);
     nn_mul_scalar(nn_as_array(ctx->bwd.dw2), rcp_m);
     // db2 = 1 / m * np.sum(dZ2)
-    ctx->bwd.db2 = rcp_m * nn_sum(nn_as_array(ctx->bwd.dz2));
+    nn_sum_rows(ctx->bwd.db2, ctx->bwd.dz2);
+    nn_mul_scalar(ctx->bwd.db2, rcp_m);
     // dZ1 = W2.T.dot(dZ2) * ReLU_deriv(Z1)
     nn_transpose(ctx->bwd.w2_t, model->w2);
     nn_dot(ctx->bwd.dz1, ctx->bwd.w2_t, ctx->bwd.dz2);
@@ -460,16 +482,12 @@ static void nn_backward_prop(
     nn_relu_deriv(nn_as_array(ctx->fwd.z1), nn_as_array(ctx->fwd.z1));
     nn_mul(nn_as_array(ctx->bwd.dz1), nn_as_array(ctx->fwd.z1));
     // dW1 = 1 / m * dZ1.dot(X.T)
-    nn_transpose(ctx->bwd.dw1, dataset->pixels);
+    nn_transpose(ctx->bwd.x_t, dataset->pixels);
+    nn_dot(ctx->bwd.dw1, ctx->bwd.dz1, ctx->bwd.x_t);
     nn_mul_scalar(nn_as_array(ctx->bwd.dw1), rcp_m);
     // db1 = 1 / m * np.sum(dZ1)
-    ctx->bwd.db1 = rcp_m * nn_sum(nn_as_array(ctx->bwd.dz1));
-}
-
-static void nn_sub_scalar(struct nn_array dst, struct nn_array a, float b) {
-    for (size_t i = 0; i < dst.size; i++) {
-        dst.data[i] = a.data[i] - b;
-    }
+    nn_sum_rows(ctx->bwd.db1, ctx->bwd.dz1);
+    nn_mul_scalar(ctx->bwd.db1, rcp_m);
 }
 
 void nn_update_params(
@@ -485,7 +503,8 @@ void nn_update_params(
         nn_as_array(ctx->dw1)
     );
     // b1 = b1 - alpha * db1
-    nn_sub_scalar(model->b1, model->b1, learning_rate * ctx->db1);
+    nn_mul_scalar(ctx->db1, learning_rate);
+    nn_sub(model->b1, model->b1, ctx->db1);
     // W2 = W2 - alpha * dW2
     nn_mul_scalar(nn_as_array(ctx->dw2), learning_rate);
     nn_sub(
@@ -494,19 +513,53 @@ void nn_update_params(
         nn_as_array(ctx->dw2)
     );
     // b2 = b2 - alpha * db2
-    nn_sub_scalar(model->b2, model->b2, learning_rate * ctx->db2);
+    nn_mul_scalar(ctx->db2, learning_rate);
+    nn_sub(model->b2, model->b2, ctx->db2);
+}
+
+static void
+nn_log_accuracy(struct nn_matrix output, struct nn_array expected_labels) {
+    size_t num_accurate_labels = 0;
+
+    for (size_t x = 0; x < output.cols; x++) {
+        size_t argmax = 0;
+
+        for (size_t y = 1; y < output.rows; y++) {
+            if (NN_AT(output, x, y) > NN_AT(output, x, argmax)) {
+                argmax = y;
+            }
+        }
+
+        if (argmax == (size_t) expected_labels.data[x]) {
+            num_accurate_labels++;
+        }
+    }
+
+    NN_LOG(
+        "accuracy: %.9f (%zu/%zu)",
+        (float) num_accurate_labels / (float) expected_labels.size,
+        num_accurate_labels,
+        expected_labels.size
+    );
 }
 
 void nn_train(
     struct nn_train_context *ctx,
     struct nn_model *model,
     const struct nn_dataset *dataset,
-    float learning_rate
+    float learning_rate,
+    size_t iterations
 ) {
-    nn_forward_prop(&ctx->fwd, model, dataset->pixels);
-    nn_backward_prop(ctx, model, dataset);
-    nn_update_params(model, &ctx->bwd, learning_rate);
-    puts("foo");
+    for (size_t i = 0; i < iterations; i++) {
+        nn_forward_prop(&ctx->fwd, model, dataset->pixels);
+        nn_backward_prop(ctx, model, dataset);
+        nn_update_params(model, &ctx->bwd, learning_rate);
+
+        if (i % 10 == 0) {
+            NN_LOG("training iteration #%zu", i);
+            nn_log_accuracy(ctx->fwd.a2, dataset->labels);
+        }
+    }
 }
 
 // TODO: Needs `struct nn_infer_context`.

@@ -50,12 +50,12 @@ struct nn_backward_prop_context {
     struct nn_matrix dz2;
     struct nn_matrix a1_t;
     struct nn_matrix dw2;
-    float db2;
+    struct nn_array db2;
     struct nn_matrix w2_t;
     struct nn_matrix dz1;
     struct nn_matrix x_t;
     struct nn_matrix dw1;
-    float db1;
+    struct nn_array db1;
 };
 
 struct nn_train_context {
@@ -75,7 +75,8 @@ void nn_train(
     struct nn_train_context *ctx,
     struct nn_model *model,
     const struct nn_dataset *dataset,
-    float learning_rate
+    float learning_rate,
+    size_t iterations
 );
 
 // TODO
