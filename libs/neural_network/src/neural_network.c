@@ -485,7 +485,6 @@ static void nn_backward_prop(
     const struct nn_dataset *dataset
 ) {
     // 1 / m
-    float m = (float) dataset->pixels.cols;
     float rcp_m = 1.0f / (float) dataset->pixels.cols;
 
     // one_hot_Y = one_hot(Y)
