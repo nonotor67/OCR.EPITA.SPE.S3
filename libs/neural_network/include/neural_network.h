@@ -39,25 +39,52 @@ void nn_model_rand(struct nn_model *model);
 
 bool nn_model_read(struct nn_model *model, const char *filepath);
 
-struct nn_context {
+struct nn_forward_prop_context {
     struct nn_matrix z1;
     struct nn_matrix a1;
     struct nn_matrix a2;
     struct nn_array a2_sum;
 };
 
-bool nn_context_init(
-    struct nn_context *ctx,
+struct nn_backward_prop_context {
+    struct nn_matrix dz2;
+    struct nn_matrix a1_t;
+    struct nn_matrix dw2;
+    float db2;
+    struct nn_matrix w2_t;
+    struct nn_matrix dz1;
+    struct nn_matrix x_t;
+    struct nn_matrix dw1;
+    float db1;
+};
+
+struct nn_train_context {
+    struct nn_forward_prop_context fwd;
+    struct nn_backward_prop_context bwd;
+};
+
+bool nn_train_context_init(
+    struct nn_train_context *ctx,
     const struct nn_model *model,
     const struct nn_dataset *dataset
 );
 
-void nn_context_fini(struct nn_context *ctx);
+void nn_train_context_fini(struct nn_train_context *ctx);
 
+void nn_train(
+    struct nn_train_context *ctx,
+    struct nn_model *model,
+    const struct nn_dataset *dataset,
+    float learning_rate
+);
+
+// TODO
+#if 0
 struct nn_matrix nn_infer(
     struct nn_context *ctx,
     const struct nn_model *model,
     struct nn_matrix input
 );
+#endif
 
 #endif // OCR_SUDOKU_SOLVER_NEURAL_NETWORK_H
