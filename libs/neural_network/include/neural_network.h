@@ -39,6 +39,8 @@ void nn_model_rand(struct nn_model *model);
 
 bool nn_model_read(struct nn_model *model, const char *filepath);
 
+bool nn_model_write(const struct nn_model *model, const char *filepath);
+
 struct nn_forward_prop_context {
     struct nn_matrix z1;
     struct nn_matrix a1;

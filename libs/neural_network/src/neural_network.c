@@ -66,6 +66,21 @@ static bool nn_read(struct nn_array dst, FILE *file) {
     return true;
 }
 
+static bool nn_write(struct nn_array src, FILE *file) {
+    size_t pos = 0;
+
+    while (pos < src.size) {
+        if (feof(file)) {
+            NN_LOGE("write error");
+            return false;
+        }
+
+        pos += fwrite(&src.data[pos], sizeof(float), src.size - pos, file);
+    }
+
+    return true;
+}
+
 bool nn_dataset_load(struct nn_dataset *dataset, const char *filepath) {
     FILE *file = fopen(filepath, "rb");
 
@@ -175,6 +190,19 @@ bool nn_model_read(struct nn_model *model, const char *filepath) {
 
     return nn_read(nn_as_array(model->w1), file) && nn_read(model->b1, file) &&
         nn_read(nn_as_array(model->w2), file) && nn_read(model->b2, file);
+}
+
+bool nn_model_write(const struct nn_model *model, const char *filepath) {
+    FILE *file = fopen(filepath, "wb");
+
+    if (!file) {
+        NN_LOGE("failed to open file");
+        return false;
+    }
+
+    return nn_write(nn_as_array(model->w1), file) &&
+        nn_write(model->b1, file) && nn_write(nn_as_array(model->w2), file) &&
+        nn_write(model->b2, file);
 }
 
 static bool nn_forward_prop_context_init(
