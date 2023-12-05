@@ -11,3 +11,4 @@ target_sources(
 target_link_libraries(neural_network PUBLIC m)
 
 add_subdirectory(test)
+add_subdirectory(tools)
