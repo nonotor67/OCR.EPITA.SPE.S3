@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-Test(neural_network, example) {
+Test(neural_network, train) {
     struct nn_dataset dataset;
     cr_assert(nn_dataset_load(&dataset, "/tmp/train.bin"));
 
@@ -18,10 +18,23 @@ Test(neural_network, example) {
 
     nn_train(&ctx, &model, &dataset, 0.1f, 11);
 
-    nn_model_write(&model, "/tmp/model_c.bin");
+    nn_model_write(&model, "/tmp/model_test_train.bin");
 
-    struct nn_infer_context infer_ctx;
-    cr_assert(nn_infer_context_init(&infer_ctx, &model));
+    nn_train_context_fini(&ctx);
+    nn_model_fini(&model);
+    nn_dataset_fini(&dataset);
+}
+
+Test(neural_network, infer) {
+    struct nn_dataset dataset;
+    cr_assert(nn_dataset_load(&dataset, "/tmp/train.bin"));
+
+    struct nn_model model;
+    cr_assert(nn_model_init(&model));
+    cr_assert(nn_model_read(&model, "/tmp/model_test_infer.bin"));
+
+    struct nn_infer_context ctx;
+    cr_assert(nn_infer_context_init(&ctx, &model));
 
     float input_data[28 * 28];
     struct nn_array input = { .size = 28 * 28, .data = input_data };
@@ -31,7 +44,7 @@ Test(neural_network, example) {
             input_data[y] = dataset.pixels.data[y * dataset.pixels.cols + x];
         }
 
-        size_t label = nn_infer(&infer_ctx, &model, input);
+        size_t label = nn_infer(&ctx, &model, input);
         printf(
             "got label %zu, expected %zu\n",
             label,
@@ -39,8 +52,7 @@ Test(neural_network, example) {
         );
     }
 
-    nn_infer_context_fini(&infer_ctx);
-    nn_train_context_fini(&ctx);
+    nn_infer_context_fini(&ctx);
     nn_model_fini(&model);
     nn_dataset_fini(&dataset);
 }
