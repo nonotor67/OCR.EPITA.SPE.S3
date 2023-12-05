@@ -288,6 +288,7 @@ static bool nn_backward_prop_context_init(
 
     if (!nn_matrix_init(&ctx->x_t, pixels.cols, pixels.rows)) {
         nn_matrix_fini(&ctx->dz1);
+        nn_matrix_fini(&ctx->w2_t);
         nn_array_fini(&ctx->db2);
         nn_matrix_fini(&ctx->dw2);
         nn_matrix_fini(&ctx->a1_t);
@@ -297,6 +298,7 @@ static bool nn_backward_prop_context_init(
     if (!nn_matrix_init(&ctx->dw1, ctx->dz1.rows, pixels.rows)) {
         nn_matrix_fini(&ctx->x_t);
         nn_matrix_fini(&ctx->dz1);
+        nn_matrix_fini(&ctx->w2_t);
         nn_array_fini(&ctx->db2);
         nn_matrix_fini(&ctx->dw2);
         nn_matrix_fini(&ctx->a1_t);
@@ -308,6 +310,7 @@ static bool nn_backward_prop_context_init(
         nn_matrix_fini(&ctx->dw1);
         nn_matrix_fini(&ctx->x_t);
         nn_matrix_fini(&ctx->dz1);
+        nn_matrix_fini(&ctx->w2_t);
         nn_array_fini(&ctx->db2);
         nn_matrix_fini(&ctx->dw2);
         nn_matrix_fini(&ctx->a1_t);
@@ -320,9 +323,14 @@ static bool nn_backward_prop_context_init(
 static void nn_backward_prop_context_fini(struct nn_backward_prop_context *ctx
 ) {
     nn_matrix_fini(&ctx->dz2);
+    nn_matrix_fini(&ctx->a1_t);
     nn_matrix_fini(&ctx->dw2);
+    nn_array_fini(&ctx->db2);
+    nn_matrix_fini(&ctx->w2_t);
     nn_matrix_fini(&ctx->dz1);
+    nn_matrix_fini(&ctx->x_t);
     nn_matrix_fini(&ctx->dw1);
+    nn_array_fini(&ctx->db1);
 }
 
 bool nn_train_context_init(
