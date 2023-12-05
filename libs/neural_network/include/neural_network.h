@@ -81,13 +81,21 @@ void nn_train(
     size_t iterations
 );
 
-// TODO
-#if 0
-struct nn_matrix nn_infer(
-    struct nn_context *ctx,
-    const struct nn_model *model,
-    struct nn_matrix input
+struct nn_infer_context {
+    struct nn_forward_prop_context fwd;
+};
+
+bool nn_infer_context_init(
+    struct nn_infer_context *ctx,
+    const struct nn_model *model
 );
-#endif
+
+void nn_infer_context_fini(struct nn_infer_context *ctx);
+
+size_t nn_infer(
+    struct nn_infer_context *ctx,
+    const struct nn_model *model,
+    struct nn_array input
+);
 
 #endif // OCR_SUDOKU_SOLVER_NEURAL_NETWORK_H

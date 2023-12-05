@@ -44,6 +44,14 @@ static void nn_matrix_fini(struct nn_matrix *matrix) {
 
 #define NN_AT(matrix, x, y) ((matrix).data[(y) * (matrix).cols + (x)])
 
+static struct nn_matrix nn_as_matrix(struct nn_array array) {
+    return (struct nn_matrix){
+        .rows = array.size,
+        .cols = 1,
+        .data = array.data,
+    };
+}
+
 static struct nn_array nn_as_array(struct nn_matrix matrix) {
     return (struct nn_array){
         .size = matrix.rows * matrix.cols,
@@ -208,13 +216,13 @@ bool nn_model_write(const struct nn_model *model, const char *filepath) {
 static bool nn_forward_prop_context_init(
     struct nn_forward_prop_context *ctx,
     const struct nn_model *model,
-    const struct nn_dataset *dataset
+    size_t num_images
 ) {
-    if (!nn_matrix_init(&ctx->z1, model->w1.rows, dataset->pixels.cols)) {
+    if (!nn_matrix_init(&ctx->z1, model->w1.rows, num_images)) {
         return false;
     }
 
-    if (!nn_matrix_init(&ctx->a1, model->w1.rows, dataset->pixels.cols)) {
+    if (!nn_matrix_init(&ctx->a1, model->w1.rows, num_images)) {
         nn_matrix_fini(&ctx->z1);
         return false;
     }
@@ -338,7 +346,7 @@ bool nn_train_context_init(
     const struct nn_model *model,
     const struct nn_dataset *dataset
 ) {
-    if (!nn_forward_prop_context_init(&ctx->fwd, model, dataset)) {
+    if (!nn_forward_prop_context_init(&ctx->fwd, model, dataset->pixels.cols)) {
         return false;
     }
 
@@ -597,14 +605,32 @@ void nn_train(
     }
 }
 
-// TODO: Needs `struct nn_infer_context`.
-#if 0
-    struct nn_matrix nn_infer(
-        struct nn_context *ctx,
-        const struct nn_model *model,
-        struct nn_matrix input
-    ) {
-    nn_forward_prop(ctx, model, input);
-    return ctx->a2;
+bool nn_infer_context_init(
+    struct nn_infer_context *ctx,
+    const struct nn_model *model
+) {
+    return nn_forward_prop_context_init(&ctx->fwd, model, 1);
 }
-#endif
+
+void nn_infer_context_fini(struct nn_infer_context *ctx) {
+    nn_forward_prop_context_fini(&ctx->fwd);
+}
+
+size_t nn_infer(
+    struct nn_infer_context *ctx,
+    const struct nn_model *model,
+    struct nn_array input
+) {
+    nn_forward_prop(&ctx->fwd, model, nn_as_matrix(input));
+    struct nn_array output = nn_as_array(ctx->fwd.a2);
+
+    size_t argmax = 0;
+
+    for (size_t i = 1; i < output.size; i++) {
+        if (output.data[i] > output.data[argmax]) {
+            argmax = i;
+        }
+    }
+
+    return argmax;
+}
