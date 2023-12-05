@@ -53,10 +53,12 @@ IncludeCategories:
     Priority: 2
   - Regex: '^"'
     Priority: 1
-  - Regex: '^<(MagickWand|criterion|gtk/)'
+  - Regex: '^<(image_processing|neural_network|sudoku_solver)'
     Priority: 3
-  - Regex: '.h>$'
+  - Regex: '^<(MagickWand|criterion|gtk/)'
     Priority: 4
+  - Regex: '.h>$'
+    Priority: 5
 IncludeIsMainRegex: '$'
 IncludeIsMainSourceRegex: ''
 IndentAccessModifiers: false
