@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="utf-8" />
+    <link href="style.css" rel="stylesheet" />
+    <title>ClosedAI</title>
+    <style>
+        .pdf-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>ClosedAI - Document(s)</h1>
+        <div class="lllll">
+            <div id="one" style="text-align: left">Sommaire</div>
+            <div id="two">
+                <button class="favorite stylee" onclick="location.href='pdf.html'" type="button"
+                    value="Suite">PDF</button>
+                <button class="favorite stylee" onclick="location.href='index.html'" type="button"
+                    value="Suite">Groupe</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="wrapper row">
+        <main class="main">
+            <article>
+                <h2>PDF:</h2>
+                <a href="https://moodle.epita.fr/pluginfile.php/104287/mod_label/intro/ocr_sudoku_solver_fr.pdf"
+                    target="_blank">Cahier des Charges</a>
+                <br>
+
+                <button class="favorite stylee" onclick="history.back()" type="button" value="Suite">Précédent</button>
+            </article>
+        </main>
+        <img class="up" width="25" src="up-arrow.svg"
+            onclick="document.body.scrollTop=0;document.documentElement.scrollTop=0;event.preventDefault()" />
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="utf-8" />
+    <link href="style.css" rel="stylesheet" type="text/css" media="screen" />
+    <title>ClosedAI - Solutionneur Sudoku OCR</title>
+</head>
+
+<body>
+    <header>
+        <h1>ClosedAI - Solutionneur Sudoku OCR</h1>
+        <div class="lllll">
+            <div id="one" style="text-align: left">Sommaire
+                <svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" style="width:1em;height:1em;"
+                    data-new="" aria-hidden="true" data-v-67d7128c="">
+                    <polygon fill="currentColor"
+                        points="8 10.98 3.51 6.49 4.49 5.51 8 9.02 11.51 5.51 12.49 6.49 8 10.98" data-v-67d7128c="">
+                    </polygon>
+                </svg>
+            </div>
+            <div id="two">
+                <button class="favorite stylee" onclick="location.href='pdf.html'" type="button"
+                    value="Suite">PDF</button>
+                <button class="favorite stylee" onclick="location.href='index.html'" type="button"
+                    value="Suite">Groupe</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="wrapper row">
+        <main class="main">
+            <article>
+                <h2>Introduction au Solutionneur Sudoku OCR</h2>
+                <p class="zoom">Bienvenue dans la description détaillée du Solutionneur Sudoku OCR développé par
+                    ClosedAI. Notre équipe à EPITA Strasbourg a travaillé en collaboration pour créer un outil puissant
+                    combinant le traitement d'image, les réseaux neuronaux et les algorithmes de résolution de Sudoku.
+                </p>
+
+                <!-- Code Container for Image Processing Module -->
+                <div>
+                    <h2>Module de Traitement d'Image</h2>
+                    <p class="zoom">Le module de traitement d'image, implémenté en C à l'aide de la bibliothèque
+                        MagickWand, est responsable de transformer l'image Sudoku d'entrée en un format adapté à la
+                        résolution. Il inclut des opérations telles que la détection des bords, la dilatation et la
+                        distorsion pour extraire avec précision la grille Sudoku.</p>
+                    <pre class="code-container">
+                        #include "image_processing.h"
+
+                        #include &lt;MagickWand/MagickWand.h&gt;
+
+                        bool ip_process_image(
+                            const char *image_path,
+                            const char *cell_path_fmt,
+                            double rotate_degrees
+                        ) {
+                            // Implémentation du traitement d'image
+                            // ...
+
+                            return true;
+                        }
+                    </pre>
+                </div>
+
+                <!-- Code Container for Sudoku Solver Module -->
+                <div>
+                    <h2>Module de Résolution Sudoku</h2>
+                    <p class="zoom">Notre Solutionneur Sudoku, implémenté en C, utilise un algorithme de rétrogradation
+                        pour trouver une solution au puzzle Sudoku. Le Solutionneur garantit que la solution respecte
+                        les règles du Sudoku en vérifiant les doublons dans les lignes, les colonnes et les boîtes 3x3.
+                    </p>
+                    <pre class="code-container">
+                        #include "sudoku_solver.h"
+
+                        bool ss_is_valid(const ss_grid grid) {
+                            // Implémentation de la validation de la grille Sudoku
+                            // ...
+
+                            return true;
+                        }
+
+                        bool ss_solve_sudoku(ss_grid grid) {
+                            // Implémentation de la résolution du Sudoku par rétrogradation
+                            // ...
+
+                            return true;
+                        }
+                    </pre>
+                </div>
+
+                <!-- Code Container for Graphical User Interface (GUI) -->
+                <div>
+                    <h2>Interface Utilisateur Graphique (GUI)</h2>
+                    <p class="zoom">Pour une expérience conviviale, nous avons développé une interface utilisateur
+                        graphique utilisant SDL, SDL_image, SDL_ttf et GTK. Cette GUI permet aux utilisateurs de choisir
+                        une image d'entrée, de générer la grille Sudoku résolue et de sauvegarder l'image de sortie.</p>
+                    <pre class="code-container">
+                        #include &lt;SDL.h&gt;
+                        #include &lt;SDL_image.h&gt;
+                        #include &lt;SDL_ttf.h&gt;
+                        #include &lt;gtk/gtk.h&gt;
+
+                        // ... (Autres définitions)
+
+                        void draw_sudoku(SDL_Renderer *renderer, const int *arr) {
+                            // Rendu de la grille Sudoku avec SDL
+                            // ...
+
+                            SDL_RenderPresent(renderer);
+                        }
+
+                        int main(int argc, char *argv[]) {
+                            // Implémentation de l'interface utilisateur basée sur GTK
+                            // ...
+
+                            return EXIT_SUCCESS;
+                        }
+                    </pre>
+                </div>
+
+                <h2>Objectifs du Projet</h2>
+                <p class="zoom">Notre objectif principal est de développer un Solutionneur Sudoku OCR efficace en
+                    exploitant notre expertise en traitement d'image, résolution algorithmique de problèmes et
+                    techniques avancées de réseaux neuronaux.</p>
+
+                <button class="favorite stylee" onclick="location.href='index.html'" type="button"
+                    value="Retour à l'Accueil">Retour à l'Accueil</button>
+            </article>
+            <img class="up" width="25" src="up-arrow.svg"
+                onclick="document.body.scrollTop=0;document.documentElement.scrollTop=0;event.preventDefault()" />
+        </main>
+    </div>
+</body>
+
+
+</html>
