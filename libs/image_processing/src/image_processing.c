@@ -498,44 +498,24 @@ bool ip_process_image(const char *src_path, float *dst_pixels[9 * 9]) {
                 continue;
             }
 
-            result = MagickImportImagePixels(
-                         cell_wand,
-                         0,
-                         0,
-                         28,
-                         28,
-                         "I",
-                         CharPixel,
-                         cell_pixels
-                     ) == MagickTrue;
-
-            if (!result) {
-                cell_wand = DestroyMagickWand(cell_wand);
-                ip_point_list_fini(&to_visit);
-                canny_wand = DestroyMagickWand(canny_wand);
-                return false;
-            }
-
+            cell_wand = DestroyMagickWand(cell_wand);
             size_t cell_index = y * 9 + x;
 
             if (dst_pixels) {
                 float *normalized_pixels = malloc(28 * 28 * sizeof(float));
 
                 if (!normalized_pixels) {
-                    DestroyMagickWand(cell_wand);
                     ip_point_list_fini(&to_visit);
-                    canny_wand = DestroyMagickWand(canny_wand);
                     return false;
                 }
 
                 for (size_t i = 0; i < 28 * 28; i++) {
-                    normalized_pixels[i] = (float) cell_pixels[i] / 255.0f;
+                    float value = (float) cell_pixels[i] / 255.0f;
+                    normalized_pixels[i] = value;
                 }
 
                 dst_pixels[cell_index] = normalized_pixels;
             }
-
-            cell_wand = DestroyMagickWand(cell_wand);
         }
     }
 

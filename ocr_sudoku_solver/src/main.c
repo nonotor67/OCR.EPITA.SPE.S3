@@ -1,4 +1,6 @@
 #include <image_processing.h>
+#include <neural_network.h>
+#include <sudoku_solver.h>
 
 #include <gtk/gtk.h>
 
@@ -12,6 +14,8 @@ GtkFileChooserButton *input_image = NULL;
 GtkSpinButton *input_rotation = NULL;
 GtkButton *input_solve = NULL;
 GtkButton *input_save = NULL;
+
+struct nn_model model;
 
 static void set_image_from_file(const char *filepath) {
     if (!filepath) {
@@ -46,7 +50,7 @@ static void set_image_from_file(const char *filepath) {
     gtk_image_set_from_pixbuf(output_image, pixbuf);
 }
 
-static void on_tkt_jsp_quoi(
+static void on_input_image_file_set(
     __attribute__((unused)) void *widget,
     __attribute__((unused)) gpointer user_data
 ) {
@@ -59,9 +63,48 @@ static void on_input_solve_clicked(
     __attribute__((unused)) void *widget,
     __attribute__((unused)) gpointer user_data
 ) {
-    set_image_from_file(
-        "/home/overmighty/projects/epita-s3-ocr-sudoku-solver/libs/image_processing/test/images/image_03.jpeg"
-    );
+    float *all_cells_pixels[9 * 9];
+
+    if (!ip_process_image(ROTATED_IMAGE_PATH, all_cells_pixels)) {
+        fputs("error: failed to process image\n", stderr);
+        return;
+    }
+
+    struct nn_infer_context ctx;
+
+    if (!nn_infer_context_init(&ctx, &model)) {
+        puts("error: failed to init ctx");
+        nn_model_fini(&model);
+        exit(EXIT_FAILURE);
+    }
+
+    ss_grid sudoku = { 0 };
+
+    for (size_t cell_index = 0; cell_index < 9 * 9; cell_index++) {
+        float *cell_pixels = all_cells_pixels[cell_index];
+
+        if (!cell_pixels) {
+            // Empty cell.
+            continue;
+        }
+
+        struct nn_array input = {
+            .size = 28 * 28,
+            .data = cell_pixels,
+        };
+        size_t label = nn_infer(&ctx, &model, input);
+
+        sudoku[cell_index] = (int) (label + 1);
+    }
+
+    for (size_t y = 0; y < 9; y++) {
+        for (size_t x = 0; x < 9; x++) {
+            int value = sudoku[y * 9 + x];
+            printf("%c", (char) (value == 0 ? '.' : value + '0'));
+        }
+
+        putchar('\n');
+    }
 }
 
 static void on_input_save_clicked(
@@ -96,7 +139,10 @@ static void on_input_save_clicked(
     gtk_widget_destroy(GTK_WIDGET(save_dialog));
 }
 
-int main(int argc, char *argv[]) {
+int main(
+    __attribute__((unused)) int argc,
+    __attribute__((unused)) char *argv[]
+) {
     gtk_init(NULL, NULL);
 
     GtkBuilder *builder = gtk_builder_new();
@@ -126,13 +172,13 @@ int main(int argc, char *argv[]) {
     g_signal_connect(
         input_image,
         "file-set",
-        G_CALLBACK(on_tkt_jsp_quoi),
+        G_CALLBACK(on_input_image_file_set),
         NULL
     );
     g_signal_connect(
         input_rotation,
         "value-changed",
-        G_CALLBACK(on_tkt_jsp_quoi),
+        G_CALLBACK(on_input_image_file_set),
         NULL
     );
     g_signal_connect(
@@ -147,6 +193,17 @@ int main(int argc, char *argv[]) {
         G_CALLBACK(on_input_save_clicked),
         NULL
     );
+
+    if (!nn_model_init(&model)) {
+        fputs("error: failed to init model\n", stderr);
+        exit(EXIT_FAILURE);
+    }
+
+    if (!nn_model_read(&model, "model.bin")) {
+        fputs("error: failed to read model\n", stderr);
+        nn_model_fini(&model);
+        exit(EXIT_FAILURE);
+    }
 
     gtk_main();
 
