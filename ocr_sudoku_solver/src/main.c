@@ -185,6 +185,19 @@ static void on_input_solve_clicked(
     set_image_from_file(OUTPUT_IMAGE_PATH);
 }
 
+static void save_output_image(const char *filepath) {
+    MagickWand *wand = NewMagickWand();
+
+    if (MagickReadImage(wand, OUTPUT_IMAGE_PATH) == MagickFalse) {
+        fputs("error: failed to read image\n", stderr);
+        return;
+    }
+
+    if (MagickWriteImage(wand, filepath) == MagickFalse) {
+        fputs("error: failed to write image\n", stderr);
+    }
+}
+
 static void on_input_save_clicked(
     __attribute__((unused)) void *widget,
     __attribute__((unused)) gpointer user_data
@@ -211,7 +224,9 @@ static void on_input_save_clicked(
     gint response = gtk_dialog_run(GTK_DIALOG(save_dialog));
 
     if (response == GTK_RESPONSE_ACCEPT) {
-        puts("TODO");
+        gchar *filepath =
+            gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(save_dialog));
+        save_output_image(filepath);
     }
 
     gtk_widget_destroy(GTK_WIDGET(save_dialog));
