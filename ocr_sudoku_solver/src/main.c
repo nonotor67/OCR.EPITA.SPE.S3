@@ -73,7 +73,7 @@ static void on_input_image_file_set(
     gchar *filename =
         gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(input_image));
     rotate_input_image(filename);
-    set_image_from_file(filename);
+    set_image_from_file(ROTATED_IMAGE_PATH);
 }
 
 static void draw_sudoku(const ss_grid sudoku) {
