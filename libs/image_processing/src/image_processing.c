@@ -14,9 +14,18 @@ struct ip_point {
     ssize_t y;
 };
 
-#define IP_NUM_DIRECTIONS 8
+#define IP_NUM_FOUR_WAY_DIRECTIONS 4
 
-const struct ip_point IP_DIRECTIONS[IP_NUM_DIRECTIONS] = {
+const struct ip_point IP_FOUR_WAY_DIRECTIONS[IP_NUM_FOUR_WAY_DIRECTIONS] = {
+    { .x = 0, .y = -1 }, // North
+    { .x = -1, .y = 0 }, // West
+    { .x = 1, .y = 0 }, // East
+    { .x = 0, .y = 1 }, // South
+};
+
+#define IP_NUM_EIGHT_WAY_DIRECTIONS 8
+
+const struct ip_point IP_EIGHT_WAY_DIRECTIONS[IP_NUM_EIGHT_WAY_DIRECTIONS] = {
     { .x = -1, .y = -1 }, // Northwest
     { .x = 0, .y = -1 }, // North
     { .x = 1, .y = -1 }, // Northeast
@@ -126,10 +135,10 @@ static bool ip_find_component(
             dest->bot_right = pos;
         }
 
-        for (size_t i = 0; i < IP_NUM_DIRECTIONS; i++) {
+        for (size_t i = 0; i < IP_NUM_EIGHT_WAY_DIRECTIONS; i++) {
             struct ip_point next_pos = {
-                .x = pos.x + IP_DIRECTIONS[i].x,
-                .y = pos.y + IP_DIRECTIONS[i].y,
+                .x = pos.x + IP_EIGHT_WAY_DIRECTIONS[i].x,
+                .y = pos.y + IP_EIGHT_WAY_DIRECTIONS[i].y,
             };
 
             if (!ip_point_list_push(to_visit, next_pos)) {
@@ -226,6 +235,75 @@ static bool ip_find_grid(
     *dest = grid;
     *min_dest = grid_min;
     *max_dest = grid_max;
+    return true;
+}
+
+static bool ip_remove_cell_borders(
+    unsigned char *cell_pixels,
+    bool *visited,
+    struct ip_point_list *to_visit
+) {
+    struct ip_point start;
+
+    for (ssize_t i = 0; i < 27; i++) {
+        start = (struct ip_point){ .x = i, .y = 0 };
+
+        if (!ip_point_list_push(to_visit, start)) {
+            return false;
+        }
+
+        start = (struct ip_point){ .x = 0, .y = i + 1 };
+
+        if (!ip_point_list_push(to_visit, start)) {
+            return false;
+        }
+
+        start = (struct ip_point){ .x = i + 1, .y = 27 };
+
+        if (!ip_point_list_push(to_visit, start)) {
+            return false;
+        }
+
+        start = (struct ip_point){ .x = 27, .y = i };
+
+        if (!ip_point_list_push(to_visit, start)) {
+            return false;
+        }
+    }
+
+    while (to_visit->len > 0) {
+        struct ip_point pos = ip_point_list_pop(to_visit);
+
+        if (pos.x < 0 || pos.x >= 28 || pos.y < 0 || pos.y >= 28) {
+            continue;
+        }
+
+        ssize_t cell_index = pos.y * 28 + pos.x;
+
+        if (visited[cell_index]) {
+            continue;
+        }
+
+        visited[cell_index] = true;
+
+        if (cell_pixels[cell_index] == 0) {
+            continue;
+        }
+
+        cell_pixels[cell_index] = 0;
+
+        for (size_t i = 0; i < IP_NUM_FOUR_WAY_DIRECTIONS; i++) {
+            struct ip_point next_pos = {
+                .x = pos.x + IP_FOUR_WAY_DIRECTIONS[i].x,
+                .y = pos.y + IP_FOUR_WAY_DIRECTIONS[i].y,
+            };
+
+            if (!ip_point_list_push(to_visit, next_pos)) {
+                return false;
+            }
+        }
+    }
+
     return true;
 }
 
@@ -347,30 +425,72 @@ bool ip_process_image(
     ssize_t cw = (grid_max.x - grid_min.x) / 9;
     ssize_t ch = (grid_max.y - grid_min.y) / 9;
 
+    unsigned char cell_pixels[28 * 28];
+    bool visited[28 * 28];
+    struct ip_point_list to_visit;
+
+    if (!ip_point_list_init(&to_visit)) {
+        canny_wand = DestroyMagickWand(canny_wand);
+        return false;
+    }
+
     for (ssize_t y = 0; y < 9; y++) {
         for (ssize_t x = 0; x < 9; x++) {
-            char *cell_path;
-            asprintf(&cell_path, cell_path_fmt, x, y);
+            memset(visited, 0, 28 * 28);
 
             MagickWand *cell_wand = CloneMagickWand(canny_wand);
             ssize_t cx = x * cw + grid_min.x;
             ssize_t cy = y * ch + grid_min.y;
 
-            if (MagickCropImage(cell_wand, cw, ch, cx, cy) == MagickFalse ||
+            result = MagickCropImage(cell_wand, cw, ch, cx, cy) == MagickTrue &&
                 MagickResizeImage(cell_wand, 28, 28, UndefinedFilter) ==
-                    MagickFalse ||
-                MagickWriteImage(cell_wand, cell_path) == MagickFalse) {
+                    MagickTrue &&
+                MagickExportImagePixels(
+                    cell_wand,
+                    0,
+                    0,
+                    28,
+                    28,
+                    "I",
+                    CharPixel,
+                    cell_pixels
+                ) == MagickTrue &&
+                ip_remove_cell_borders(cell_pixels, visited, &to_visit) &&
+                MagickImportImagePixels(
+                    cell_wand,
+                    0,
+                    0,
+                    28,
+                    28,
+                    "I",
+                    CharPixel,
+                    cell_pixels
+                ) == MagickTrue;
+
+            if (!result) {
+                cell_wand = DestroyMagickWand(cell_wand);
+                ip_point_list_fini(&to_visit);
+                canny_wand = DestroyMagickWand(canny_wand);
+                return false;
+            }
+
+            char *cell_path;
+            asprintf(&cell_path, cell_path_fmt, x, y);
+
+            if (MagickWriteImage(cell_wand, cell_path) == MagickFalse) {
                 free(cell_path);
                 DestroyMagickWand(cell_wand);
+                ip_point_list_fini(&to_visit);
                 canny_wand = DestroyMagickWand(canny_wand);
                 return false;
             }
 
             free(cell_path);
-            DestroyMagickWand(cell_wand);
+            cell_wand = DestroyMagickWand(cell_wand);
         }
     }
 
+    ip_point_list_fini(&to_visit);
     canny_wand = DestroyMagickWand(canny_wand);
     return true;
 }
