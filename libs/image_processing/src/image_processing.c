@@ -363,6 +363,10 @@ bool ip_process_image(const char *src_path, float *dst_pixels[9 * 9]) {
         return false;
     }
 
+    if (MagickWriteImage(wand, IP_STEP_1_PATH) == MagickFalse) {
+        return false;
+    }
+
     MagickWand *canny_wand = CloneMagickWand(wand);
 
     ExceptionInfo *exception = AcquireExceptionInfo();
@@ -384,6 +388,10 @@ bool ip_process_image(const char *src_path, float *dst_pixels[9 * 9]) {
         DestroyKernelInfo(kernel);
         canny_wand = DestroyMagickWand(canny_wand);
         DestroyMagickWand(wand);
+        return false;
+    }
+
+    if (MagickWriteImage(wand, IP_STEP_2_PATH) == MagickFalse) {
         return false;
     }
 
@@ -441,6 +449,10 @@ bool ip_process_image(const char *src_path, float *dst_pixels[9 * 9]) {
         distort_args,
         MagickFalse
     );
+
+    if (MagickWriteImage(canny_wand, IP_STEP_3_PATH) == MagickFalse) {
+        return false;
+    }
 
     if (!result) {
         canny_wand = DestroyMagickWand(canny_wand);

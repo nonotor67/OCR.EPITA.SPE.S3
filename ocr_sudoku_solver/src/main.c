@@ -20,9 +20,11 @@ GtkSpinButton *input_rotation = NULL;
 GtkButton *input_solve = NULL;
 GtkButton *input_save = NULL;
 
+GtkSpinButton *input_advanced_step = NULL;
+
 struct nn_model model;
 
-static void set_image_from_file(const char *filepath) {
+static void rotate_input_image(const char *filepath) {
     if (!filepath) {
         return;
     }
@@ -33,6 +35,12 @@ static void set_image_from_file(const char *filepath) {
         fputs("error: failed to rotate image\n", stderr);
         exit(EXIT_FAILURE);
     }
+}
+
+static void set_image_from_file(const char *filepath) {
+    if (!filepath) {
+        return;
+    }
 
     GtkWidget *output_box = gtk_widget_get_parent(GTK_WIDGET(output_image));
     int width = gtk_widget_get_allocated_width(output_box);
@@ -40,7 +48,7 @@ static void set_image_from_file(const char *filepath) {
 
     GError *error = NULL;
     GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file_at_scale(
-        ROTATED_IMAGE_PATH,
+        filepath,
         width,
         height,
         TRUE,
@@ -61,6 +69,7 @@ static void on_input_image_file_set(
 ) {
     gchar *filename =
         gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(input_image));
+    rotate_input_image(filename);
     set_image_from_file(filename);
 }
 
@@ -232,6 +241,22 @@ static void on_input_save_clicked(
     gtk_widget_destroy(GTK_WIDGET(save_dialog));
 }
 
+static void on_input_advanced_step_value_changed(
+    __attribute__((unused)) void *widget,
+    __attribute__((unused)) gpointer user_data
+) {
+    gint step_index = gtk_spin_button_get_value_as_int(input_advanced_step);
+
+    switch (step_index) {
+    case 0: set_image_from_file(ROTATED_IMAGE_PATH); break;
+    case 1: set_image_from_file(IP_STEP_1_PATH); break;
+    case 2: set_image_from_file(IP_STEP_2_PATH); break;
+    case 3: set_image_from_file(IP_STEP_3_PATH); break;
+    case 4: set_image_from_file(OUTPUT_IMAGE_PATH); break;
+    default: gtk_spin_button_set_value(input_advanced_step, 0.0); break;
+    }
+}
+
 int main(
     __attribute__((unused)) int argc,
     __attribute__((unused)) char *argv[]
@@ -259,6 +284,9 @@ int main(
     input_solve = GTK_BUTTON(gtk_builder_get_object(builder, "input-solve"));
     input_save = GTK_BUTTON(gtk_builder_get_object(builder, "input-save"));
 
+    input_advanced_step =
+        GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "input-advanced-step"));
+
     // Connects signal handlers.
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
@@ -284,6 +312,13 @@ int main(
         input_save,
         "clicked",
         G_CALLBACK(on_input_save_clicked),
+        NULL
+    );
+
+    g_signal_connect(
+        input_advanced_step,
+        "value-changed",
+        G_CALLBACK(on_input_advanced_step_value_changed),
         NULL
     );
 

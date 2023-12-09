@@ -3,6 +3,10 @@
 
 #include <stdbool.h>
 
+#define IP_STEP_1_PATH "/tmp/ocr-sudoku-solver.ip.step1.png"
+#define IP_STEP_2_PATH "/tmp/ocr-sudoku-solver.ip.step2.png"
+#define IP_STEP_3_PATH "/tmp/ocr-sudoku-solver.ip.step3.png"
+
 bool ip_rotate_image(
     const char *src_path,
     double degrees,
