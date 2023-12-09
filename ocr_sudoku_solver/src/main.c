@@ -177,6 +177,10 @@ static void on_input_solve_clicked(
         putchar('\n');
     }
 
+    if (!ss_solve_sudoku(sudoku)) {
+        fputs("error: failed to solve sudoku\n", stderr);
+    }
+
     draw_sudoku(sudoku);
     set_image_from_file(OUTPUT_IMAGE_PATH);
 }
