@@ -20,6 +20,7 @@ GtkSpinButton *input_rotation = NULL;
 GtkButton *input_solve = NULL;
 GtkButton *input_save = NULL;
 
+GtkFileChooserButton *input_advanced_model = NULL;
 GtkSpinButton *input_advanced_step = NULL;
 
 struct nn_model model;
@@ -241,6 +242,18 @@ static void on_input_save_clicked(
     gtk_widget_destroy(GTK_WIDGET(save_dialog));
 }
 
+static void on_input_advanced_model_value_changed(
+    __attribute__((unused)) void *widget,
+    __attribute__((unused)) gpointer user_data
+) {
+    gchar *filename =
+        gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(input_advanced_model));
+
+    if (!nn_model_read(&model, filename)) {
+        fputs("error: failed to read model\n", stderr);
+    }
+}
+
 static void on_input_advanced_step_value_changed(
     __attribute__((unused)) void *widget,
     __attribute__((unused)) gpointer user_data
@@ -286,6 +299,9 @@ int main(
 
     input_advanced_step =
         GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "input-advanced-step"));
+    input_advanced_model = GTK_FILE_CHOOSER_BUTTON(
+        gtk_builder_get_object(builder, "input-advanced-model")
+    );
 
     // Connects signal handlers.
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
@@ -315,6 +331,12 @@ int main(
         NULL
     );
 
+    g_signal_connect(
+        input_advanced_model,
+        "file-set",
+        G_CALLBACK(on_input_advanced_model_value_changed),
+        NULL
+    );
     g_signal_connect(
         input_advanced_step,
         "value-changed",
