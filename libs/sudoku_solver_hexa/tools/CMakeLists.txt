@@ -1,0 +1,2 @@
+add_executable(solver_hexa solver_hexa.c)
+target_link_libraries(solver_hexa PRIVATE sudoku_solver_hexa)
