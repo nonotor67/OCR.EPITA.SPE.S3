@@ -2,9 +2,14 @@
 #include <neural_network.h>
 #include <sudoku_solver.h>
 
+#include <MagickWand/MagickWand.h>
 #include <gtk/gtk.h>
 
 #define ROTATED_IMAGE_PATH "/tmp/ocr-sudoku-solver.rotated_image.png"
+#define OUTPUT_IMAGE_PATH "/tmp/ocr-sudoku-solver.output_image.png"
+
+#define OUTPUT_FONT_PATH "Roboto-Regular.ttf"
+#define OUTPUT_IMAGE_WIDTH 1000
 
 GtkWindow *window = NULL;
 
@@ -59,6 +64,72 @@ static void on_input_image_file_set(
     set_image_from_file(filename);
 }
 
+static void draw_sudoku(const ss_grid sudoku) {
+    MagickWand *wand = NewMagickWand();
+
+    MagickSetSize(wand, OUTPUT_IMAGE_WIDTH, OUTPUT_IMAGE_WIDTH);
+    PixelWand *background = NewPixelWand();
+    PixelSetColor(background, "white");
+    MagickNewImage(wand, OUTPUT_IMAGE_WIDTH, OUTPUT_IMAGE_WIDTH, background);
+    DestroyPixelWand(background);
+
+    DrawingWand *drawing_wand = NewDrawingWand();
+    PixelWand *stroke_color = NewPixelWand();
+    PixelSetColor(stroke_color, "black");
+    DrawSetStrokeColor(drawing_wand, stroke_color);
+    DrawSetStrokeWidth(drawing_wand, 1);
+    DrawSetStrokeAntialias(drawing_wand, MagickTrue);
+
+    if (DrawSetFont(drawing_wand, OUTPUT_FONT_PATH) == MagickFalse) {
+        fputs("warning: failed to set font\n", stderr);
+    }
+
+    double font_size = 60.0;
+    int cell_width = OUTPUT_IMAGE_WIDTH / 9;
+    int cell_height = OUTPUT_IMAGE_WIDTH / 9;
+
+    DrawSetFontSize(drawing_wand, font_size);
+
+    for (int x = 0; x < OUTPUT_IMAGE_WIDTH; x += cell_width) {
+        DrawLine(drawing_wand, x, 0, x, OUTPUT_IMAGE_WIDTH);
+    }
+
+    for (int y = 0; y < OUTPUT_IMAGE_WIDTH; y += cell_height) {
+        DrawLine(drawing_wand, 0, y, OUTPUT_IMAGE_WIDTH, y);
+    }
+
+    for (int i = 0; i < 9 * 9; i++) {
+        int row = i / 9;
+        int col = i % 9;
+        int number = sudoku[i];
+
+        if (number == 0) {
+            fputs("warning: empty cell\n", stderr);
+            continue;
+        }
+
+        char text[2];
+        snprintf(text, 2, "%d", number);
+
+        DrawSetFillColor(drawing_wand, stroke_color);
+        DrawAnnotation(
+            drawing_wand,
+            col * cell_width + cell_width / 2 - font_size / 3,
+            row * cell_height + cell_height / 2 + font_size / 3,
+            text
+        );
+    }
+
+    MagickDrawImage(wand, drawing_wand);
+
+    if (MagickWriteImage(wand, OUTPUT_IMAGE_PATH) == MagickFalse) {
+        fputs("error: failed to write output image\n", stderr);
+    }
+
+    DestroyDrawingWand(drawing_wand);
+    DestroyPixelWand(stroke_color);
+}
+
 static void on_input_solve_clicked(
     __attribute__((unused)) void *widget,
     __attribute__((unused)) gpointer user_data
@@ -105,6 +176,9 @@ static void on_input_solve_clicked(
 
         putchar('\n');
     }
+
+    draw_sudoku(sudoku);
+    set_image_from_file(OUTPUT_IMAGE_PATH);
 }
 
 static void on_input_save_clicked(
