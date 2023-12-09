@@ -339,6 +339,17 @@ bool ip_rotate_image(
     return true;
 }
 
+static bool ip_is_empty_cell(const unsigned char *cell_pixels) {
+    size_t sum = 0;
+
+    for (size_t i = 0; i < 28 * 28; i++) {
+        sum += cell_pixels[i];
+    }
+
+    size_t average = sum / (28 * 28);
+    return average <= 0;
+}
+
 bool ip_process_image(const char *src_path, float *dst_pixels[9 * 9]) {
     MagickWand *wand = NewMagickWand();
 
@@ -473,17 +484,30 @@ bool ip_process_image(const char *src_path, float *dst_pixels[9 * 9]) {
                     CharPixel,
                     cell_pixels
                 ) == MagickTrue &&
-                ip_remove_cell_borders(cell_pixels, visited, &to_visit) &&
-                MagickImportImagePixels(
-                    cell_wand,
-                    0,
-                    0,
-                    28,
-                    28,
-                    "I",
-                    CharPixel,
-                    cell_pixels
-                ) == MagickTrue;
+                ip_remove_cell_borders(cell_pixels, visited, &to_visit);
+
+            if (!result) {
+                cell_wand = DestroyMagickWand(cell_wand);
+                ip_point_list_fini(&to_visit);
+                canny_wand = DestroyMagickWand(canny_wand);
+                return false;
+            }
+
+            if (ip_is_empty_cell(cell_pixels)) {
+                cell_wand = DestroyMagickWand(cell_wand);
+                continue;
+            }
+
+            result = MagickImportImagePixels(
+                         cell_wand,
+                         0,
+                         0,
+                         28,
+                         28,
+                         "I",
+                         CharPixel,
+                         cell_pixels
+                     ) == MagickTrue;
 
             if (!result) {
                 cell_wand = DestroyMagickWand(cell_wand);
