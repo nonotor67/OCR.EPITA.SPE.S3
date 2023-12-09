@@ -12,3 +12,4 @@ pkg_check_modules(MAGICKWAND REQUIRED IMPORTED_TARGET MagickWand)
 target_link_libraries(image_processing PUBLIC PkgConfig::MAGICKWAND)
 
 add_subdirectory(test)
+add_subdirectory(tools)

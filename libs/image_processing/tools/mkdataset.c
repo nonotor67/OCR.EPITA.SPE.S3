@@ -24,8 +24,6 @@ static void print_usage(const char *program_name) {
     fprintf(stderr, "usage: %s input_dir_path output_path\n", program_name);
 }
 
-size_t written = 0;
-
 static void make_dataset_sudoku(const char *image_path, FILE *output) {
     const char *image1 = {
         "53..7...."
@@ -97,13 +95,7 @@ static void make_dataset_sudoku(const char *image_path, FILE *output) {
 
     float *normalized_pixels[9 * 9];
 
-    if (!ip_process_image(
-            normalized_pixels,
-            image_path,
-            "/tmp/zest.png.%zu%zu.png",
-            0.0,
-            NULL
-        )) {
+    if (!ip_process_image(image_path, normalized_pixels)) {
         LOGE("error: failed to process image");
         exit(EXIT_FAILURE);
     }
@@ -112,6 +104,7 @@ static void make_dataset_sudoku(const char *image_path, FILE *output) {
 
     for (size_t i = 0; i < 9 * 9; i++) {
         char letter;
+
         if (strcmp(image_path, "image_01.jpeg") == 0) {
             letter = image1[i];
         } else if (strcmp(image_path, "image_02.jpeg") == 0) {
@@ -125,14 +118,16 @@ static void make_dataset_sudoku(const char *image_path, FILE *output) {
         } else if (strcmp(image_path, "image_06.jpeg") == 0) {
             letter = image6[i];
         } else {
-            //            puts("skipping unknown image");
-            continue;
+            printf("skipping unknown image '%s'\n", image_path);
+            break;
         }
+
         if (letter == '.') {
-            //            puts("skipping blank cell");
             continue;
         }
+
         label = (float) (letter - '1');
+
         if (fwrite(&label, sizeof(label), 1, output) < 1) {
             LOGE("error: failed to write label to file");
             exit(EXIT_FAILURE);
@@ -143,7 +138,6 @@ static void make_dataset_sudoku(const char *image_path, FILE *output) {
             LOGE("error: failed to write normalized pixels");
             exit(EXIT_FAILURE);
         }
-        written++;
     }
 }
 
@@ -172,7 +166,6 @@ static void make_dataset(const char *input_dir_path, const char *output_path) {
 
         make_dataset_sudoku(entry->d_name, output);
     }
-    printf("written: %zu\n", written);
 
     closedir(input_dir);
     fclose(output);
