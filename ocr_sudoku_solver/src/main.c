@@ -23,6 +23,8 @@ GtkButton *input_save = NULL;
 GtkFileChooserButton *input_advanced_model = NULL;
 GtkSpinButton *input_advanced_step = NULL;
 
+bool have_solved = false;
+
 struct nn_model model;
 
 static void rotate_input_image(const char *filepath) {
@@ -144,12 +146,16 @@ static void on_input_solve_clicked(
     __attribute__((unused)) void *widget,
     __attribute__((unused)) gpointer user_data
 ) {
+    have_solved = false;
+
     float *all_cells_pixels[9 * 9];
 
     if (!ip_process_image(ROTATED_IMAGE_PATH, all_cells_pixels)) {
         fputs("error: failed to process image\n", stderr);
         return;
     }
+
+    have_solved = true;
 
     struct nn_infer_context ctx;
 
@@ -212,6 +218,10 @@ static void on_input_save_clicked(
     __attribute__((unused)) void *widget,
     __attribute__((unused)) gpointer user_data
 ) {
+    if (!have_solved) {
+        return;
+    }
+
     GtkWidget *save_dialog = gtk_file_chooser_dialog_new(
         "Save File",
         window,
@@ -258,6 +268,10 @@ static void on_input_advanced_step_value_changed(
     __attribute__((unused)) void *widget,
     __attribute__((unused)) gpointer user_data
 ) {
+    if (!have_solved) {
+        return;
+    }
+
     gint step_index = gtk_spin_button_get_value_as_int(input_advanced_step);
 
     switch (step_index) {
