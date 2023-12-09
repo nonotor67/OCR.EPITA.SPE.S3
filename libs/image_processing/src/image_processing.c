@@ -340,13 +340,10 @@ bool ip_rotate_image(
     return true;
 }
 
-bool ip_process_image(
-    const char *image_path,
-    const char *cell_path_fmt
-) {
+bool ip_process_image(const char *src_path, float *dst_pixels[9 * 9]) {
     MagickWand *wand = NewMagickWand();
 
-    if (MagickReadImage(wand, image_path) == MagickFalse) {
+    if (MagickReadImage(wand, src_path) == MagickFalse) {
         DestroyMagickWand(wand);
         return false;
     }
@@ -452,6 +449,10 @@ bool ip_process_image(
         return false;
     }
 
+    if (dst_pixels) {
+        memset(dst_pixels, 0, 9 * 9 * sizeof(float *));
+    }
+
     for (ssize_t y = 0; y < 9; y++) {
         for (ssize_t x = 0; x < 9; x++) {
             memset(visited, 0, 28 * 28);
@@ -492,18 +493,25 @@ bool ip_process_image(
                 return false;
             }
 
-            char *cell_path;
-            asprintf(&cell_path, cell_path_fmt, x, y);
+            size_t cell_index = y * 9 + x;
 
-            if (MagickWriteImage(cell_wand, cell_path) == MagickFalse) {
-                free(cell_path);
-                DestroyMagickWand(cell_wand);
-                ip_point_list_fini(&to_visit);
-                canny_wand = DestroyMagickWand(canny_wand);
-                return false;
+            if (dst_pixels) {
+                float *normalized_pixels = malloc(28 * 28 * sizeof(float));
+
+                if (!normalized_pixels) {
+                    DestroyMagickWand(cell_wand);
+                    ip_point_list_fini(&to_visit);
+                    canny_wand = DestroyMagickWand(canny_wand);
+                    return false;
+                }
+
+                for (size_t i = 0; i < 28 * 28; i++) {
+                    normalized_pixels[i] = (float) cell_pixels[i] / 255.0f;
+                }
+
+                dst_pixels[cell_index] = normalized_pixels;
             }
 
-            free(cell_path);
             cell_wand = DestroyMagickWand(cell_wand);
         }
     }
