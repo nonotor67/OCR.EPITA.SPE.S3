@@ -126,7 +126,7 @@ static void draw_sudoku(const ss_grid sudoku) {
             drawing_wand,
             col * cell_width + cell_width / 2 - font_size / 3,
             row * cell_height + cell_height / 2 + font_size / 3,
-            text
+            (const unsigned char *) text
         );
     }
 
