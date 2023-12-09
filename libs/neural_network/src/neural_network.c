@@ -458,7 +458,7 @@ static void nn_sub(struct nn_array dst, struct nn_array a, struct nn_array b) {
     }
 }
 
-static void nn_transpose(struct nn_matrix dst, struct nn_matrix src) {
+void nn_transpose(struct nn_matrix dst, struct nn_matrix src) {
     for (size_t y = 0; y < dst.rows; y++) {
         for (size_t x = 0; x < dst.cols; x++) {
             NN_AT(dst, x, y) = NN_AT(src, y, x);

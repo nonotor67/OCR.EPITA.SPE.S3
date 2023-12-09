@@ -1,4 +1,5 @@
 #include <image_processing.h>
+#include <neural_network.h>
 
 #include <MagickWand/MagickWand.h>
 
@@ -19,6 +20,8 @@
         ##__VA_ARGS__           \
     )
 #define LOGE(fmt, ...) LOG(fmt ": %s", ##__VA_ARGS__, strerror(errno))
+
+size_t num_images = 0;
 
 static void print_usage(const char *program_name) {
     fprintf(stderr, "usage: %s input_dir_path output_path\n", program_name);
@@ -126,6 +129,8 @@ static void make_dataset_sudoku(const char *image_path, FILE *output) {
             continue;
         }
 
+        num_images++;
+
         label = (float) (letter - '1');
 
         if (fwrite(&label, sizeof(label), 1, output) < 1) {
@@ -168,6 +173,68 @@ static void make_dataset(const char *input_dir_path, const char *output_path) {
     }
 
     closedir(input_dir);
+
+    float *pre_transpose_data = malloc(num_images * 785 * sizeof(float));
+    float *post_transpose_data = malloc(num_images * 785 * sizeof(float));
+
+    if (!pre_transpose_data || !post_transpose_data) {
+        LOGE("error: failed to allocate matrices for transpose");
+        exit(EXIT_FAILURE);
+    }
+
+    if (fseek(output, 0, SEEK_SET) == -1) {
+        LOGE("error: failed to seek");
+        exit(EXIT_FAILURE);
+    }
+
+    size_t pos = 0;
+
+    while (pos < num_images * 785) {
+        pos += fread(
+            pre_transpose_data,
+            sizeof(float),
+            num_images * 785 - pos,
+            output
+        );
+    }
+
+    struct nn_matrix pre_transpose = {
+        .rows = num_images,
+        .cols = 785,
+        .data = pre_transpose_data,
+    };
+    struct nn_matrix post_transpose = {
+        .rows = 785,
+        .cols = num_images,
+        .data = post_transpose_data,
+    };
+    nn_transpose(post_transpose, pre_transpose);
+
+    free(pre_transpose_data);
+
+    if (fseek(output, 0, SEEK_SET) == -1) {
+        LOGE("error: failed to seek");
+        exit(EXIT_FAILURE);
+    }
+
+    if (fwrite(&num_images, sizeof(size_t), 1, output) == 0) {
+        LOGE("error: failed to write size");
+        exit(EXIT_FAILURE);
+    }
+
+    pos = 0;
+
+    while (pos < num_images * 785) {
+        pos += fwrite(
+            post_transpose_data,
+            sizeof(float),
+            num_images * 785 - pos,
+            output
+        );
+    }
+
+    free(post_transpose_data);
+
     fclose(output);
 }
 

@@ -15,6 +15,8 @@ struct nn_matrix {
     float *data;
 };
 
+void nn_transpose(struct nn_matrix dst, struct nn_matrix src);
+
 struct nn_dataset {
     struct nn_array labels;
     struct nn_matrix pixels;
