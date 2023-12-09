@@ -307,30 +307,48 @@ static bool ip_remove_cell_borders(
     return true;
 }
 
-bool ip_process_image(
-    const char *image_path,
-    const char *cell_path_fmt,
-    double rotate_degrees
+bool ip_rotate_image(
+    const char *src_path,
+    double degrees,
+    const char *dst_path
 ) {
     MagickWand *wand = NewMagickWand();
 
-    if (MagickReadImage(wand, image_path) == MagickFalse) {
-        DestroyMagickWand(wand);
+    if (MagickReadImage(wand, src_path) == MagickFalse) {
         return false;
     }
 
-    if (fabs(rotate_degrees) >= DBL_EPSILON) {
+    if (fabs(degrees) >= DBL_EPSILON) {
         PixelWand *pixel_wand = NewPixelWand();
         PixelSetColor(pixel_wand, "white");
 
-        if (MagickRotateImage(wand, pixel_wand, rotate_degrees) ==
-            MagickFalse) {
+        if (MagickRotateImage(wand, pixel_wand, degrees) == MagickFalse) {
             DestroyPixelWand(pixel_wand);
             DestroyMagickWand(wand);
             return false;
         }
 
         DestroyPixelWand(pixel_wand);
+    }
+
+    if (MagickWriteImage(wand, dst_path) == MagickFalse) {
+        DestroyMagickWand(wand);
+        return false;
+    }
+
+    DestroyMagickWand(wand);
+    return true;
+}
+
+bool ip_process_image(
+    const char *image_path,
+    const char *cell_path_fmt
+) {
+    MagickWand *wand = NewMagickWand();
+
+    if (MagickReadImage(wand, image_path) == MagickFalse) {
+        DestroyMagickWand(wand);
+        return false;
     }
 
     if (MagickCannyEdgeImage(wand, 7.0, 3.0, 0.3, 0.4) == MagickFalse) {
