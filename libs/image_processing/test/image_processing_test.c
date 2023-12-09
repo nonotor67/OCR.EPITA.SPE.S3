@@ -3,8 +3,6 @@
 #include <MagickWand/MagickWand.h>
 #include <criterion/criterion.h>
 
-#include <stdio.h>
-
 Test(image_processing, example) {
     MagickWandGenesis();
 

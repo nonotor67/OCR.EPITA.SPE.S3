@@ -3,7 +3,6 @@
 #include <MagickWand/MagickWand.h>
 
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 
 #define IP_MIN(a, b) ((a) < (b) ? (a) : (b))
